@@ -85,10 +85,10 @@ class Move():
         self.dnsw = doNotScoreWord
         self.rwws = revWordWhenScoring
         self.rack = rack
-        if not self.dnsw:
-            self.getScore()
-        if evaluate:
-           self.getEvaluation(rack)
+        #if not self.dnsw:
+        self.getScore()
+        #if evaluate:
+        self.getEvaluation(rack)
         
     def comp(self, other):
         return self.score+self.valuation>other.score+other.valuation
@@ -120,40 +120,87 @@ class Board():
     def checkWord(self, word):
         return len(word) > 1 and word.upper() in subdicts[word[:2]]
 
+##    def getWords(self, board):
+##        words = []
+##        uai = [] #used across indexes
+##        udi = [] #used down indexes
+##        #Iterate through; find a letter -> follow right/down
+##        c = 0
+##
+##        def _getWord(t, nR, nC):
+##            word=collections.OrderedDict()
+##            def _check():
+##                return uai.count((nR, nC))<1 and nR < len(board) and nC < len(board[nR]) and board[nR][nC] not in extraList
+##            def _expand(c=0):
+##                letter = board[nR][nC]
+##                if word.get(letter):
+##                    letter += str(c) #differentiate
+##                    c += 1
+##                word[letter] = (nR, nC)
+##                udi.append((nR, nC))
+##            while _check():
+##                _expand()
+##                if t == 'C':
+##                    nC += 1
+##                else:
+##                    nR += 1
+##            if len(word)>1:
+##                words.append(word)
+##        for (rIndex, row) in enumerate(board):
+##            for (cIndex, col) in enumerate(row):
+##                if col not in self.extraList:
+##                    _getWord('C', rIndex, cIndex)
+##                    _getWord('R', rIndex, cIndex)
+##        
+##        return [self.minimize(word) for word in words]
     def getWords(self, board):
         words = []
         uai = [] #used across indexes
         udi = [] #used down indexes
         #Iterate through; find a letter -> follow right/down
         c = 0
-
-        def _getWord(t, nR, nC):
-            word=collections.OrderedDict()
-            def _check():
-                return uai.count((nR, nC))<1 and nR < len(board) and nC < len(board[nR]) and board[nR][nC] not in extraList
-            def _expand(c=0):
-                letter = board[nR][nC]
-                if word.get(letter):
-                    letter += str(c) #differentiate
-                    c += 1
-                word[letter] = (nR, nC)
-                udi.append((nR, nC))
-            while _check():
-                _expand()
-                if t == 'C':
-                    nC += 1
-                else:
-                    nR += 1
-            if len(word)>1:
-                words.append(word)
         for (rIndex, row) in enumerate(board):
             for (cIndex, col) in enumerate(row):
                 if col not in self.extraList:
-                    _getWord('C', rIndex, cIndex)
-                    _getWord('R', rIndex, cIndex)
+                    nR, nC = rIndex, cIndex
+                    word=collections.OrderedDict()
+                    while uai.count((nR, nC))<1 and \
+                          nR < len(board) and nC < len(board[nR]) and \
+                          board[nR][nC] not in self.extraList:
+                        letter = board[nR][nC]
+                        if word.get(letter):
+                            letter += str(c) #differentiate
+                            c += 1
+                        word[letter] = (nR, nC)
+                        uai.append((nR, nC))
+                        nC += 1
+                    if len(word)>1:
+                        words.append(word)
+                        #yield word
+##                    else:
+##                        for index in word.values():
+##                            uai.remove(index)
+                    
+                    nC = cIndex #reset horizontal index
+                    word=collections.OrderedDict()
+                    while udi.count((nR, nC))<1 and \
+                          nR < len(board) and nC < len(board[nR]) and \
+                          board[nR][nC] not in self.extraList:
+                        letter = board[nR][nC]
+                        if word.get(letter):
+                            letter += str(c) #differentiate
+                            c += 1
+                        word[letter] = (nR, nC)
+                        udi.append((nR, nC))
+                        nR += 1
+                    if len(word)>1:
+                        words.append(word)
+                        #yield word
+##                    else:
+##                        for index in word.values():
+##                            udi.remove(index)
         
         return [self.minimize(word) for word in words]
-
     def minimize(self, wordDict):
         word = ''.join(i[0] for i in wordDict.keys())
         newDict = collections.OrderedDict()
@@ -318,3 +365,96 @@ class Board():
             wordScore += 50 #Bingo!
         return wordScore       
       
+    def s(self, move):
+        self.scores = {"a": 1, "c": 3, "b": 3, "e": 1, "d": 2, "g": 2,
+                   "f": 4, "i": 1, "h": 4, "k": 5, "j": 8, "m": 3,
+                   "l": 1, "o": 1, "n": 1, "q": 10, "p": 3, "s": 1,
+                   "r": 1, "u": 1, "t": 1, "w": 4, "v": 4, "y": 4,
+                   "x": 8, "z": 10}
+        oldWords = self.getWords(self.board)
+        allWords = self.getWords(move.board.board)
+        newWords = [word for word in allWords if word not in oldWords]
+        print(oldWords)
+        print(allWords)
+        print(newWords)
+        wordScore = 0
+        wordMult = 1
+        scored = collections.OrderedDict()
+        c=0
+
+        print(move.word)
+        print(move.row, move.col)
+        print(move.dnsw, move.rwws)
+        if not move.dnsw:
+            if move.rwws:
+                sw = reversed(move.word)
+                im = 1
+            else:
+                sw = move.word
+                im = -1
+            for (index, letter) in enumerate(sw):
+                row = move.row
+                col = move.col
+                
+                if move.direction == 'D':
+                    row -= index*im
+                else:
+                    col -= index*im
+                
+                if row>15 or col>15:
+                    print('fa')
+                    return 0
+                lettMult = 1
+                oldLetter = self.board[row][col]
+                print(row, col)
+                print(oldLetter)
+                if oldLetter in ['TLS', 'DLS']:
+                    lettMult *= ['D', 'T'].index(oldLetter[0])+2
+                elif oldLetter in ['TWS', 'DWS']:
+                    wordMult *= ['D', 'T'].index(oldLetter[0])+2
+                elif oldLetter == '*':
+                    wordMult *= 2
+                print(lettMult)
+                wordScore += self.scores[letter.lower()] * lettMult
+                if scored.get(letter):
+                    scored[letter+str(c)]=(row, col)
+                    c+=1
+                else:
+                    scored[letter]=(row,col)
+                print(wordScore)
+            
+            wordScore *= wordMult
+            print(wordScore)
+        if move.rwws:
+            scored = collections.OrderedDict(list(scored.items())[::-1])
+        for word in newWords:
+            if move.dnsw or not set([i for i in scored.values()]).issubset(set([i for i in word.values()])):
+                print('aux', word)
+                auxWordScore = 0
+                auxWordMult = 1
+                for (letter, place) in word.items():
+                    #if place not in scored.values():
+                    print('\t scoring', letter, place)
+                    lettMult = 1
+                    letter = letter[0]
+                    row, col = place
+                    oldLetter = self.board[row][col]
+                    if row>15 or col>15:
+                        print('fa')
+                        return 0
+                    if oldLetter in ['TLS', 'DLS']:
+                        lettMult *= ['D', 'T'].index(oldLetter[0])+2
+                    elif oldLetter in ['TWS', 'DWS']:
+                        auxWordMult *= ['D', 'T'].index(oldLetter[0])+2
+                    print(oldLetter)
+                    print(lettMult)
+                    auxWordScore += self.scores[letter.lower()] * lettMult
+                    print(auxWordScore)
+                auxWordScore *= auxWordMult
+                print(auxWordScore)
+                wordScore += auxWordScore
+                print(wordScore)
+        if len(move.word) == 7:
+            wordScore += 50 #Bingo!
+        #input()
+        return wordScore 
