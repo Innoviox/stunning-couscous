@@ -127,17 +127,17 @@ class Board():
 ##        #Iterate through; find a letter -> follow right/down
 ##        c = 0
 ##
-##        def _getWord(t, nR, nC):
+##        def _getWord(t, nR, nC, l):
 ##            word=collections.OrderedDict()
 ##            def _check():
-##                return uai.count((nR, nC))<1 and nR < len(board) and nC < len(board[nR]) and board[nR][nC] not in extraList
+##                return l.count((nR, nC))<1 and nR < len(board) and nC < len(board[nR]) and board[nR][nC] not in extraList
 ##            def _expand(c=0):
 ##                letter = board[nR][nC]
 ##                if word.get(letter):
 ##                    letter += str(c) #differentiate
 ##                    c += 1
 ##                word[letter] = (nR, nC)
-##                udi.append((nR, nC))
+##                l.append((nR, nC))
 ##            while _check():
 ##                _expand()
 ##                if t == 'C':
@@ -149,8 +149,8 @@ class Board():
 ##        for (rIndex, row) in enumerate(board):
 ##            for (cIndex, col) in enumerate(row):
 ##                if col not in self.extraList:
-##                    _getWord('C', rIndex, cIndex)
-##                    _getWord('R', rIndex, cIndex)
+##                    _getWord('C', rIndex, cIndex, uai)
+##                    _getWord('R', rIndex, cIndex, udi)
 ##        
 ##        return [self.minimize(word) for word in words]
     def getWords(self, board):
@@ -176,10 +176,6 @@ class Board():
                         nC += 1
                     if len(word)>1:
                         words.append(word)
-                        #yield word
-##                    else:
-##                        for index in word.values():
-##                            uai.remove(index)
                     
                     nC = cIndex #reset horizontal index
                     word=collections.OrderedDict()
@@ -195,12 +191,9 @@ class Board():
                         nR += 1
                     if len(word)>1:
                         words.append(word)
-                        #yield word
-##                    else:
-##                        for index in word.values():
-##                            udi.remove(index)
         
         return [self.minimize(word) for word in words]
+    
     def minimize(self, wordDict):
         word = ''.join(i[0] for i in wordDict.keys())
         newDict = collections.OrderedDict()
@@ -247,14 +240,8 @@ class Board():
         return usedPlaces
     
     def removeDuplicates(self, oldList):
-        return [i for i in set(oldList)]
-##        newList = []
-##        for item in oldList:
-##          if item not in newList:
-##            newList.append(item)
-##        oldList = newList
-##        return newList
-    
+        return list(set(oldList))
+
     def checkBoard(self, board):
         if board[0] != [" ", "A ", "B ", "C ", "D ", "E ", "F ", "G ", "H ", "I ", "J ", "K ", "L ", "M ", "N ", "O "]:
             return False
@@ -270,7 +257,10 @@ class Board():
         word=correctWords
         
         places = [value for word in words for value in word.values()]
-        top = places[0]
+        if places:
+            top = places[0]
+        else:
+            return False
         extendedFrom = []
         usedPlaces = self.expandFrom(top, places, extendedFrom)
         l = [coord for place in places for coord in place]
@@ -288,10 +278,9 @@ class Board():
                     pass
                 
         #if any place wasn't used return false
-        for place in places:
-            if place not in usedPlaces:
-                return False
-        return True
+        if len([place for place in places if place not in usedPlaces]) == 0:
+            return True
+        return False
     
     def getPlaces(self, board):
         words = [word for word in self.getWords(board) if self.checkWord(''.join(letter[0] for letter in word.keys()))]

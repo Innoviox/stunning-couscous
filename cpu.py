@@ -1,3 +1,4 @@
+def print(*args, **kwargs):pass #print-suppresser
 """
 Ok. Here's how it works.
 Let's take a sample board and a sample rack:
@@ -222,52 +223,41 @@ class CPU():
     def place(self, slot, pos, word, direc, depth):
         slot, reps = slot
         currPos = pos
-        newSlot = list(slot)
+        slot = list(slot)
 
-        index = 0
-        w=False
+        index = wordPos = 0
         while index < len(word):
             newPos = currPos + index
-            if newPos>=len(newSlot):
+            if newPos>=len(slot):
                 return False
-            if newSlot[newPos] != '.':
+            if slot[newPos] != '.':
                 currPos += 1
                 index -= 1
             else:
-                newSlot[newPos] = word[index]
-                if not w:
+                slot[newPos] = word[index]
+                if wordPos:
                     wordPos = currPos+index
-                    w=True
             index += 1
-        if w:
-            wordPos += 1
-        else:
-            return False
-        #print(wordPos == slot.index(slot.strip('.')[0]))
-        newSlot = ''.join(letter for letter in newSlot)
+        wordPos += 1
+        slot = ''.join(slot)
 
-        if not all(self.checkWord(i) for i in newSlot.strip('.').split('.') if i != ''):
+        if not all(self.checkWord(i) for i in slot.strip('.').split('.')):
             return False
 
-        newBoardSlot = []
-        for (index, newLetter) in enumerate(newSlot):
-            if newLetter == '.':
-                newBoardSlot.append(reps[index])
-            else:
-                newBoardSlot.append(newLetter)
+        newBoardSlot = [reps[index] if newLetter == '.' else newLetter for (index, newLetter) in enumerate(slot)]
+
         newBoard = self.rNab()
-        oldBoard = self.rNab()
-        row, col = depth, depth
         if direc == 'A':
             newBoardSlot.insert(0, str(depth).zfill(2))
             newBoard.board[depth] = newBoardSlot[:]
             col = wordPos
+            row = depth
         else:
             for (index, row) in enumerate(newBoard.board[1:]):
                 row[depth] = newBoardSlot[index]
-
+            col = depth
             row = wordPos
-        move = Move(word, newBoard, row, col, direc, oldBoard, self.rack, doNotScoreWord=True)
+        move = Move(word, newBoard, row, col, direc, self.rNab(), self.rack, doNotScoreWord=True)
         if move.board.checkBoard(move.board.board):
             return move
         return False
@@ -309,6 +299,7 @@ class CPU():
             yield exch
 
     def _run(self):
+        
         print(self.rack)
 
         strategy = self.BlueprintCreator(self.generate(), self.rack)
@@ -345,4 +336,19 @@ class CPU():
         return b
 
         
-
+#unoptimized 1: [1.265223413996864, 3.3181498589983676, 6.187262326013297, 15.610297638981137, 11.20657178098918, 12.085041426995303, 19.933482533990173, 11.703756713977782, 11.809690213995054, 19.07466845199815, 23.55593549797777, 25.44604094600072]
+#unoptimized 2: [2.747440225997707, 8.259836661018198, 10.411048979993211, 4.2886343720019795, 6.342490005976288, 4.577497259015217, 12.975426388991764, 10.519884257984813, 11.847122590988874, 33.74615316497511, 22.835890852991724, 33.31392122301622]
+#unoptimized 3: [0.765806123992661, 6.166275091993157, 7.858307157992385, 12.531746090011438, 9.574502478993963, 19.63452962198062, 18.69206987900543, 12.540515913016861, 13.480751961003989, 16.363495366997086, 4.436360361985862, 15.09462254299433]
+#12.78334581602313
+#optimized1  1: [1.665996327996254, 7.3778611320012715, 11.375762982992455, 2.9555456250091083, 4.974553312000353, 9.928192778024822, 7.631045920017641, 11.769443914003205, 13.565904060000321, 18.685287929023616, 19.486449793999782, 16.662063413998112]
+#optimized1  2: [1.74913569400087, 7.473322498000925, 12.628520960977767, 4.9739597710140515, 14.49849371999153, 13.32051673901151, 20.283806324005127, 8.142356403986923, 16.22037523498875, 22.071941621019505, 12.094354822009336, 9.727558161976049]
+#optimized1  3: [1.5485639690014068, 3.9073374739964493, 6.62486044500838, 6.343475920992205, 2.6210223180241883, 8.699827930016909, 11.358580372005235, 23.01152083699708, 24.981908791000023, 8.391618594992906, 17.091218812012812, 8.808330937026767]
+#optimized1  4: [0.8331756230036262, 3.6176393469795585, 6.975504544010619, 10.809455045004142, 7.3936960870050825, 10.150695773016196, 22.273985980980797, 6.687757364008576, 8.724490929977037, 29.298748324014014, 4.558691303012893, 14.576253092003753]
+#10.80314185321125
+#optimized2  1: [1.2783712660020683, 4.249000264011556, 4.514386737981113, 4.865409799007466, 9.679090443009045, 6.282409895997262, 3.3017842389817815, 18.261759247019654, 8.83863319599186, 21.465678223001305, 13.255115537001984, 19.390510562021518]
+#optimized2  2: [0.9049904700077605, 2.0015377280069515, 4.282056188996648, 5.481174947984982, 6.726537792972522, 7.307185123005183, 14.644356150995009, 9.006248919991776, 17.457672567019472, 26.309426841995446, 8.991929311014246, 23.584705193003174]
+#optimized2  3: [1.452723626018269, 3.4530001710227225, 2.5678244750015438, 9.060929650993785, 4.948611400992377, 6.2725813839933835, 14.724158021999756, 13.372502509999322, 9.666142661008053, 5.119453541992698, 7.95828937200713, 16.36855056299828]
+#9.36235383397353
+#optimized3  1: 
+#optimized3  2:
+#optimized3  3: 
