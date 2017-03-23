@@ -1,4 +1,4 @@
-def print(*args, **kwargs):pass #print-suppresser
+#def print(*args, **kwargs):pass #print-suppresser
 """
 Ok. Here's how it works.
 Let's take a sample board and a sample rack:

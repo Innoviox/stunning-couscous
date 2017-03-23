@@ -6,7 +6,12 @@ def time(f, n):
     #for i in range(n):
         #print(cpu.timeit.timeit(f, number=1))
 def fight():
-    
+    c = cpu.CPU()
+    m=[]
+    while c.distribution:
+        m.append(c._run())
+        print(m)
+        c.displayBoard(c.board.board)  
 ##    c = CPU()
 ##    c2 = CPU()
 ##    m=[]
@@ -30,6 +35,7 @@ def fight():
 ##    def g():
 ##        pass
 ##        #b.getEvaluation(c.rack)
+def test():
     q=[]
     for i in range(5):
         c = cpu.CPU()
